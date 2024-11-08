@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="utf-8"?>
+<dleplugin>
+	<name>Массовые действия с подборками</name>
+	<description>Добавление/удаление через функционал edit_news</description>
+	<icon></icon>
+	<version></version>
+	<dleversion>15.3</dleversion>
+	<versioncompare>greater</versioncompare>
+	<upgradeurl></upgradeurl>
+	<filedelete>0</filedelete>
+	<needplugin></needplugin>
+	<mnotice>0</mnotice>
+	<mysqlinstall><![CDATA[]]></mysqlinstall>
+	<mysqlupgrade><![CDATA[]]></mysqlupgrade>
+	<mysqlenable><![CDATA[]]></mysqlenable>
+	<mysqldisable><![CDATA[]]></mysqldisable>
+	<mysqldelete><![CDATA[]]></mysqldelete>
+	<phpinstall><![CDATA[]]></phpinstall>
+	<phpupgrade><![CDATA[]]></phpupgrade>
+	<phpenable><![CDATA[]]></phpenable>
+	<phpdisable><![CDATA[]]></phpdisable>
+	<phpdelete><![CDATA[]]></phpdelete>
+	<notice><![CDATA[]]></notice>
+	<file name="engine/inc/editnews.php">
+		<operation action="before">
+			<searchcode><![CDATA[					<option value="mass_move_to_cat">{$lang['edit_selcat']}</option>]]></searchcode>
+			<replacecode><![CDATA[					<option value="mass_add_collection">Массовое добавление подборок</option>
+					<option value="mass_delete_collection">Массовое удаление подборок</option>]]></replacecode>
+			<enabled>1</enabled>
+		</operation>
+	</file>
+	<file name="engine/inc/massactions.php">
+		<operation action="replace">
+			<searchcode><![CDATA[} elseif( $action == "mass_edit_symbol" ) {]]></searchcode>
+			<replacecode><![CDATA[} elseif ($action == 'mass_add_collection') {
+    echoheader( "<i class=\"fa fa-comment-o position-left\"></i><span class=\"text-semibold\">Вы собираетесь массово добавить подборки к новостям</span>", $lang['mass_cat_1'] );
+
+    $count = count( $selected_news );
+    if( $config['allow_multi_category'] ) $category_multiple = "class=\"categoryselect\" multiple";
+    else $category_multiple = "class=\"categoryselect\"";
+
+    echo <<<HTML
+<form method="post">
+<div class="panel panel-default">
+  <div class="panel-heading">
+    {$lang['mass_cat_1']}
+  </div>
+  <div class="panel-body">
+		<table width="100%">
+		    <tr>
+		        <td height="100" class="text-center">Добавление подборок к выбранным новостям (<b>{$count}</b>)<br /><br />
+<select data-placeholder="{$lang['addnews_cat_sel']}" name="add_single_collection[]" style="width:350px;">
+HTML;
+
+    $getCollections = $db->query( "SELECT id, name FROM " . PREFIX . "_dle_collections ORDER BY id ASC" );
+
+    echo "<option value=''>Выберите подборку</option>";
+    while($collection_row = $db->get_row( $getCollections ) ) {
+        $formedOption = "<option value=\"{$collection_row['id']}\">{$collection_row['name']}</option>";
+        echo "$formedOption";
+    }
+
+    echo "</select><br /><br />";
+
+    foreach ( $selected_news as $newsid ) {
+        $newsid = intval($newsid);
+        echo "<input type=hidden name=selected_news[] value=\"$newsid\">";
+    }
+
+    echo <<<HTML
+<input type=hidden name=user_hash value="{$dle_login_hash}"><input type="hidden" name="action" value="do_mass_add_single_collection"><input type="hidden" name="mod" value="massactions">&nbsp;<input type="submit" value="{$lang['b_start']}" class="btn bg-teal btn-sm btn-raised"></td>
+</td>
+		    </tr>
+		</table>
+  </div>
+</div></form>
+<script>
+$('select[name="add_single_collection[]"]').chosen({
+    width: '350px',
+    placeholder_text_single: 'Выберите подборку ...'
+});
+</script>
+HTML;
+
+    echofooter();
+    exit();
+} elseif ($action == 'mass_delete_collection') {
+    echoheader( "<i class=\"fa fa-comment-o position-left\"></i><span class=\"text-semibold\">Вы собираетесь массово удалить подборки в новостях</span>", $lang['mass_cat_1'] );
+
+    $count = count( $selected_news );
+    if( $config['allow_multi_category'] ) $category_multiple = "class=\"categoryselect\" multiple";
+    else $category_multiple = "class=\"categoryselect\"";
+
+    echo <<<HTML
+<form method="post">
+<div class="panel panel-default">
+  <div class="panel-heading">
+    {$lang['mass_cat_1']}
+  </div>
+  <div class="panel-body">
+		<table width="100%">
+		    <tr>
+		        <td height="100" class="text-center">Удаление подоборок у выбранных новостей (<b>{$count}</b>)<br /><br />
+<select data-placeholder="{$lang['addnews_cat_sel']}" name="remove_single_collection[]" style="width:350px;">
+HTML;
+
+    $getCollections = $db->query( "SELECT id, name FROM " . PREFIX . "_dle_collections ORDER BY id ASC" );
+
+    echo "<option value=''>Выберите подборку для удаления</option>";
+    while($collection_row = $db->get_row( $getCollections ) ) {
+        $formedOption = "<option value=\"{$collection_row['id']}\">{$collection_row['name']}</option>";
+        echo "$formedOption";
+    }
+
+    echo "</select><br /><br />";
+
+    foreach ( $selected_news as $newsid ) {
+        $newsid = intval($newsid);
+        echo "<input type=hidden name=selected_news[] value=\"$newsid\">";
+    }
+
+    echo <<<HTML
+<input type=hidden name=user_hash value="{$dle_login_hash}"><input type="hidden" name="action" value="do_mass_remove_single_collection"><input type="hidden" name="mod" value="massactions">&nbsp;<input type="submit" value="{$lang['b_start']}" class="btn bg-teal btn-sm btn-raised"></td>
+</td>
+		    </tr>
+		</table>
+  </div>
+</div></form>
+<script>
+$('select[name="remove_single_collection[]"]').chosen({
+    width: '350px',
+    placeholder_text_single: 'Выберите подборку для удаления ...'
+});
+</script>
+HTML;
+
+    echofooter();
+    exit();
+} elseif ($action == 'do_mass_add_single_collection') {
+    $added_collections = 0;
+
+    if (!count($_REQUEST['add_single_collection'])) {
+        msg("error", $lang['mass_cat_notok'], $lang['mass_cat_notok_1'], $_SESSION['admin_referrer']);
+    }
+
+    if (count($_REQUEST['add_single_collection']) == 1 && $_REQUEST['add_single_collection'] == '') msg("error", $lang['mass_cat_notok'], $lang['mass_cat_notok_1'], $_SESSION['admin_referrer']);
+
+    $news_Array = array();
+
+    $collection_id_to_add = intval($_REQUEST['add_single_collection'][0]);
+
+    foreach ($selected_news as $id) {
+        $id = intval($id);
+        $row = $db->super_query("SELECT * FROM " . PREFIX . "_dle_collections_news WHERE newsId = '{$id}' AND collectionId = '{$collection_id_to_add}'");
+        //Если у новости уже задана такая подборка, то просто скипаем ее, нахой
+        if (isset($row)) continue;
+        $added_collections++;
+        $db->query("INSERT INTO " . PREFIX . "_dle_collections_news (newsId, collectionId) VALUES ('{$id}', '{$collection_id_to_add}')");
+    }
+
+    clear_cache();
+
+    if (count($selected_news) == $added_collections) {
+        msg("success", 'Все заебок', "Добавление подборок к ({$added_collections}) новостям - прошло успешно!", $_SESSION['admin_referrer']);
+    } elseif (count($selected_news) > $added_collections) {
+        $count_add_single_collection_errors = count($selected_news) - $added_collections;
+        msg("error", 'У части новостей уже была такая подборка', "Добавление подборок к ({$added_collections}) новостям - прошло успешно! При этом были скипнуты {$count_add_single_collection_errors} новостей.", $_SESSION['admin_referrer']);
+    } else {
+        $time_add_single_collection_errors = date("Y-m-d H:i:s");
+        msg("error", 'Чет вообще пиздец', "Произошла неизвестная ошибка, пожалуйста, обратитесь к кодеру. Время для поиска в логах: {$time_add_single_collection_errors}", $_SESSION['admin_referrer']);
+    }
+
+} elseif ($action == 'do_mass_remove_single_collection') {
+    $removed_collections = 0;
+
+    if (!count($_REQUEST['remove_single_collection'])) {
+        msg("error", $lang['mass_cat_notok'], $lang['mass_cat_notok_1'], $_SESSION['admin_referrer']);
+    }
+
+    if (count($_REQUEST['remove_single_collection']) == 1 && $_REQUEST['remove_single_collection'] == '') msg("error", $lang['mass_cat_notok'], $lang['mass_cat_notok_1'], $_SESSION['admin_referrer']);
+
+    $news_Array = array();
+
+    $collection_id_to_add = intval($_REQUEST['remove_single_collection'][0]);
+
+    foreach ($selected_news as $id) {
+        $id = intval($id);
+        $row = $db->super_query("SELECT * FROM " . PREFIX . "_dle_collections_news WHERE newsId = '{$id}' AND collectionId = '{$collection_id_to_add}'");
+        //Если у новости вовсе нету такой подборки, то скипаем
+        if (!isset($row) || $row === false) continue;
+        $removed_collections++;
+        $db->query("DELETE FROM " . PREFIX . "_dle_collections_news WHERE newsId = '{$id}' AND collectionId = '{$collection_id_to_add}'");
+    }
+
+    clear_cache();
+
+    if (count($selected_news) == $removed_collections) {
+        msg("success", 'Все заебок', "Подборка была удалена у  ({$removed_collections}) новостей!", $_SESSION['admin_referrer']);
+    } elseif (count($selected_news) > $removed_collections) {
+        $count_add_single_collection_errors = count($selected_news) - $removed_collections;
+        msg("error", 'У части новостей не было такой подборки', "Подборка была удалена у ({$removed_collections}) новостей! При этом были скипнуты {$count_add_single_collection_errors} новостей.", $_SESSION['admin_referrer']);
+    } else {
+        $time_add_single_collection_errors = date("Y-m-d H:i:s");
+        msg("error", 'Чет вообще пиздец', "Произошла неизвестная ошибка, пожалуйста, обратитесь к кодеру. Время для поиска в логах: {$time_add_single_collection_errors}", $_SESSION['admin_referrer']);
+    }
+
+}  elseif( $action == "mass_edit_symbol" ) {]]></replacecode>
+			<enabled>1</enabled>
+		</operation>
+	</file>
+</dleplugin>
